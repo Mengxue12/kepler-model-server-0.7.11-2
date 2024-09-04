@@ -1,0 +1,51 @@
+# prom_test.py
+#   - prom_client.query
+#   - prom_client.snapshot_query_result
+#
+# save response to prom_output_path/prom_output_filename.json
+#
+# To use output:
+# from prom_test import get_prom_output
+# response = get_prom_response()
+# or
+# query_result = get_query_results()
+
+import os
+
+from kepler_model.train.prom import PrometheusClient
+from kepler_model.util import load_json, save_json
+from kepler_model.util.prom_types import prom_responses_to_results
+
+prom_output_path = os.path.join(os.path.dirname(__file__), "data", "prom_output")
+prom_output_filename = "prom_response"
+
+
+def get_prom_response(save_path=prom_output_path, save_name=prom_output_filename):
+    return load_json(save_path, save_name)
+
+
+def get_query_results(save_path=prom_output_path, save_name=prom_output_filename):
+    response = get_prom_response(save_path=save_path, save_name=save_name)
+    return prom_responses_to_results(response)
+
+
+def process(save_path=prom_output_path, save_name=prom_output_filename, server=None, interval=None, step=None):
+    if server is not None:
+        os.environ["PROM_SERVER"] = server
+    if interval is not None:
+        os.environ["PROM_QUERY_INTERVAL"] = interval
+    if step is not None:
+        os.environ["PROM_QUERY_STEP"] = step
+    prom_client = PrometheusClient()
+    response_dict = prom_client.query()
+    results = prom_client.snapshot_query_result()
+    print("Available metrics: ", results.keys())
+    # print query data in csv
+    for metric, data in results.items():
+        print(metric)
+        print(data.head())
+    save_json(save_path, save_name, response_dict)
+
+
+def test_prom_process():
+    process()

@@ -1,0 +1,43 @@
+FROM python:3.10-slim
+
+# NOTE: This file contains all tools and dependencies needed for
+# setting up the development and testing environment
+
+# Prevents Python from writing pyc files.
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Keeps Python from buffering stdout and stderr to avoid situations where
+# the application crashes without emitting any logs due to buffering.
+ENV PYTHONUNBUFFERED=1
+
+RUN python -m pip install --no-cache-dir hatch && \
+		pip cache purge
+
+WORKDIR /kepler_model
+ENV PYTHONPATH=/kepler_model
+
+
+COPY pyproject.toml .
+
+# NOTE: README.md and src/../__about__.py are referenced in pyproject.toml
+# so that they are copied into the image for pip install to succeed
+COPY README.md .
+COPY cmd/ cmd/
+COPY src/ src/
+COPY tests/ tests/
+
+RUN pip install --no-cache-dir . && \
+		pip cache purge
+
+RUN hatch env create
+
+
+RUN mkdir -p /mnt/models
+# port for Model Server
+EXPOSE 8100
+# port for Online Trainer (TODO: reserved for event-based online training)
+EXPOSE 8101
+# port for Offline Trainer
+EXPOSE 8102
+
+CMD ["model-server"]

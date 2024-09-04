@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kepler-cfm
+  namespace: kepler
+data:
+  MODEL_CONFIG: |
+    NODE_COMPONENTS_ESTIMATOR=true
+    NODE_COMPONENTS_INIT_URL=https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/ec2-0.7.11/rapl-sysfs/AbsPower/BPFOnly/SGDRegressorTrainer_0.zip
+    NODE_TOTAL_ESTIMATOR=true
+    NODE_TOTAL_INIT_URL=https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/specpower-0.7.11/acpi/AbsPower/BPFOnly/SGDRegressorTrainer_0.zip
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kepler-exporter
+  namespace: kepler
+spec:
+  template:
+    spec:
+      containers:
+        # kepler: wait for estimator socket
+      - command:
+        - /bin/sh
+        - -c
+        args:
+        - until [ -e /tmp/estimator.sock ]; do sleep 1; done && /usr/bin/kepler -v=$(KEPLER_LOG_LEVEL)
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        name: kepler-exporter
+      # estimator container
+      - image: kepler_model_server
+        imagePullPolicy: IfNotPresent
+        args: ["estimator" ]
+        name: estimator
+        volumeMounts:
+        - name: cfm
+          mountPath: /etc/kepler/kepler.config
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /mnt
+          name: mnt
+      volumes:
+      - emptyDir: {}
+        name: tmp
+      - emptyDir: {}
+        name: mnt

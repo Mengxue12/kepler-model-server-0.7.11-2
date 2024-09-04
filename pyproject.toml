@@ -1,0 +1,117 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kepler_model"
+dynamic = ["version"]
+description = "kepler model server for serving kepler models"
+readme = "README.md"
+requires-python = ">= 3.10"
+license = "Apache-2.0"
+keywords = [
+  "kepler", "models", 
+  "model-server", "estimator"
+]
+
+authors = [
+  { name = "Sunyanan Choochotkaew", email = "sunyanan.choochotkaew1@ibm.com" },
+  { name = "Sunil Thaha", email = "sthaha@redhat.com" },
+]
+
+classifiers = [
+  "Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+  "flask==3.0.3",
+  "joblib==1.4.2",
+  "numpy==2.0.1",
+  "pandas==2.2.2",
+  "prometheus-api-client==0.5.5",
+  "prometheus-client==0.20.0",
+  "protobuf==5.27.3",
+  "psutil==6.0.0",
+  "py-cpuinfo==9.0.0",
+  "pyudev==0.24.3",
+  "pyyaml_env_tag==0.1",
+  "scikit-learn==1.5.1",
+  "scipy==1.14.0",
+  "seaborn==0.13.2",
+  "Werkzeug==3.0.3",
+  "xgboost==2.1.1",
+  "boto3==1.34.155"
+]
+
+[project.scripts]
+model-server = "kepler_model.server.model_server:run"
+estimator = "kepler_model.estimate.estimator:run"
+kepler-model = "kepler_model.cmd.main:run"
+offline-trainer = "kepler_model.train.offline_trainer:run"
+online-trainer = "kepler_model.train.online_trainer:run"
+
+[project.urls]
+Documentation = "https://github.com/sustainable-computing-io/kepler-model-server#readme"
+Issues = "https://github.com/sustainable-computing-io/kepler-model-server/issues"
+Source = "https://github.com/sustainable-computing-io/kepler-model-server"
+
+[tool.hatch.version]
+path = "src/kepler_model/__about__.py"
+
+[tool.hatch.envs.default]
+python = "3.10"
+extra-dependencies = [
+  "coverage[toml]>=6.5",
+	"ipdb",
+	"ipython",
+  "ipdb",
+  "ipython",
+  "pytest",
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
+]
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/kepler_model_server tests}"
+
+[tool.coverage.run]
+source_pkgs = ["kepler_model", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/kepler_model/__about__.py",
+]
+
+[tool.coverage.paths]
+kepler_model = ["src/kepler_model", "*/kepler_model/src/kepler_model"]
+tests = ["tests", "*/kepler_model/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+line-length = 320
+
+[tool.pytest.ini_options]
+markers = [
+	"focus",  # used in development to mark focused tests
+]

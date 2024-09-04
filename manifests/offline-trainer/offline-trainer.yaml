@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kepler-offline-trainer
+  namespace: system
+  labels:
+    app.kubernetes.io/component: model-server
+    app.kubernetes.io/name: kepler-model-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: offline-trainer
+      app.kubernetes.io/name: kepler-offline-trainer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: offline-trainer
+        app.kubernetes.io/name: kepler-offline-trainer
+    spec:
+      volumes:
+      - name: cfm
+        configMap:
+          name: kepler-model-server-cfm
+      - emptyDir: {}
+        name: mnt
+      containers:
+      - name: offline-trainer
+        image: kepler_model_server
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8102
+          name: http
+        volumeMounts:
+          - name: cfm
+            mountPath: /etc/kepler/kepler.config
+            readOnly: true
+          - name: mnt
+            mountPath: /mnt
+            readOnly: false
+        args: [offline-trainer]
+    
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: kepler-offline-trainer
+  namespace: system
+  labels:
+    app.kubernetes.io/component: offline-trainer
+    app.kubernetes.io/name: kepler-offline-trainer
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/component: offline-trainer
+    app.kubernetes.io/name: kepler-offline-trainer
+  ports:
+  - name: http
+    port: 8102
+    targetPort: http
